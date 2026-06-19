@@ -23,3 +23,24 @@ text = rules.concat({"document_tag": ["drug_leaflet"]}, key="text")
 Operators: `=`, `!=`, `in`, `is`, `>`, `<`. Combinators: `and`, `or`, `not`.
 The engine depends on nothing; validation (`validate`) is a separate save-time
 concern, never on the evaluation hot path.
+
+## Talking to the UI — declare a field schema
+
+The "talk to it" surface (the analog of hypster's `explore`): declare your closed
+field vocabulary once, and `Schema.to_dict()` is the exact JSON the
+`<ConditionBuilder>` UI renders an editor from. The package owns the
+field-type → operators map, so hosts don't re-derive it.
+
+```python
+from rules import Field, Schema
+
+schema = Schema([
+    Field("document_tag", "Document tag", "multi_enum", options=["drug_leaflet", "formulary"]),
+    Field("document_station", "Document station", "enum", options=["NICU", "ER"]),
+    Field("vision_page_presence", "Has diagram page", "bool"),
+])
+schema.to_dict()
+# {"fields": [...], "operators": {"multi_enum": ["in"], "enum": ["=", "!="], "bool": ["is"], ...}}
+```
+
+Field types: `enum`, `multi_enum`, `bool`, `number`, `string`.

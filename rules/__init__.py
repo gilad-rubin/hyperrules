@@ -8,6 +8,7 @@ never inspects. See ``evaluate``.
 
 from rules.engine import evaluate
 from rules.ruleset import RuleSet, load_dir
+from rules.schema import DEFAULT_OPERATORS, Field, Schema
 from rules.validation import validate
 
-__all__ = ["evaluate", "load_dir", "validate", "RuleSet"]
+__all__ = ["evaluate", "load_dir", "validate", "RuleSet", "Field", "Schema", "DEFAULT_OPERATORS"]
