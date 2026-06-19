@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from rules.engine import evaluate
+from hyperrules.engine import evaluate
 
 
 def load_dir(path: str | Path, *, when_key: str = "when") -> list[dict]:

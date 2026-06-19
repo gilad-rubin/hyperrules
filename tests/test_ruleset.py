@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from rules import RuleSet, load_dir
+from hyperrules import RuleSet, load_dir
 
 
 def _write(path: Path, obj: dict) -> None:

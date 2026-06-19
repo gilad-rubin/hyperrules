@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from rules.engine import OPERATORS
+from hyperrules.engine import OPERATORS
 
 COMBINATORS = {"and", "or", "not"}
 

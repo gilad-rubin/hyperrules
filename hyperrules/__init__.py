@@ -6,9 +6,9 @@ tree (leaf = ``field``/``operator``/``value``; group = ``combinator`` of
 never inspects. See ``evaluate``.
 """
 
-from rules.engine import evaluate
-from rules.ruleset import RuleSet, load_dir
-from rules.schema import DEFAULT_OPERATORS, Field, Schema
-from rules.validation import validate
+from hyperrules.engine import evaluate
+from hyperrules.ruleset import RuleSet, load_dir
+from hyperrules.schema import DEFAULT_OPERATORS, Field, Schema
+from hyperrules.validation import validate
 
 __all__ = ["evaluate", "load_dir", "validate", "RuleSet", "Field", "Schema", "DEFAULT_OPERATORS"]

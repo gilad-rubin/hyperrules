@@ -9,7 +9,7 @@ tree, plus opaque payload keys (`text`, `then`/`else`, …) the engine never rea
 - **group** — `{"combinator": "and" | "or" | "not", "rules": [ ...nodes... ]}`
 
 ```python
-from rules import evaluate, load_dir, validate, RuleSet
+from hyperrules import evaluate, load_dir, validate, RuleSet
 
 tree = {"combinator": "and", "rules": [
     {"field": "document_tag", "operator": "in", "value": ["drug_leaflet", "formulary"]},
@@ -32,7 +32,7 @@ field vocabulary once, and `Schema.to_dict()` is the exact JSON the
 field-type → operators map, so hosts don't re-derive it.
 
 ```python
-from rules import Field, Schema
+from hyperrules import Field, Schema
 
 schema = Schema([
     Field("document_tag", "Document tag", "multi_enum", options=["drug_leaflet", "formulary"]),

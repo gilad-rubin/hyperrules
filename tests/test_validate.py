@@ -1,4 +1,4 @@
-from rules import validate
+from hyperrules import validate
 
 
 def test_valid_tree_has_no_errors():

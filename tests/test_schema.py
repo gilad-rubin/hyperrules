@@ -1,4 +1,4 @@
-from rules import Field, Schema
+from hyperrules import Field, Schema
 
 
 def test_schema_to_dict_emits_fields_and_the_operator_map():
