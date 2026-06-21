@@ -3,4 +3,16 @@ __pycache__/
 *.pyc
 .pytest_cache/
 dist/
+build/
 *.egg-info/
+
+# Coverage
+.coverage
+coverage.xml
+
+# Caches and logs
+.cache/
+logs/
+
+# Node
+node_modules/
