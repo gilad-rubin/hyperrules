@@ -34,7 +34,7 @@ def condition_to_simple_dict(condition: Leaf | Group) -> dict[str, Any] | None:
 
 def condition_from_simple_dict(data: dict[str, Any]) -> Group:
     leaves = [Leaf(field=k, operator="in", value=v if isinstance(v, list) else [v]) for k, v in data.items()]
-    return And(*leaves) if len(leaves) != 1 else Group(combinator="and", conditions=tuple(leaves))
+    return And(*leaves)
 
 
 def _condition_from_dict(data: dict[str, Any]) -> Leaf | Group:
@@ -56,7 +56,7 @@ def load_rule(path: str | Path) -> Rule:
 
     _, front, body = text.split("---", 2)
     meta = yaml.safe_load(front)
-    when_data = meta.get("when", {})
+    when_data = meta.get("when") or {}
     condition = _condition_from_dict(when_data)
     return Rule(
         when=condition,

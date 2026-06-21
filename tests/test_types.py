@@ -124,6 +124,11 @@ def test_group_from_dict_reads_legacy_rules_key():
     assert group.conditions[0] == Leaf("x", "=", 1)
 
 
+def test_group_from_dict_missing_conditions_raises():
+    with pytest.raises(ValueError, match="missing"):
+        Group.from_dict({"combinator": "and"})
+
+
 def test_frozen_types_are_hashable():
     leaf = Leaf("a", "=", 1)
     group = And(leaf)

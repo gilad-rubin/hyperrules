@@ -11,6 +11,7 @@ Usage::
 
 from __future__ import annotations
 
+import builtins
 from typing import Any
 
 from hyperrules.field_spec import FieldSpec, _make_spec
@@ -48,7 +49,7 @@ def multi_float(*, name: str | None = None, description: str | None = None) -> F
     return _make_spec("multi_float", name=name, description=description)
 
 
-def text(*, name: str | None = None, description: str | None = None, multiline: bool = False) -> FieldSpec:
+def text(*, name: str | None = None, description: str | None = None, multiline: builtins.bool = False) -> FieldSpec:
     return _make_spec("text", name=name, description=description, multiline=multiline)
 
 

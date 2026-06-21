@@ -57,9 +57,15 @@ class Group:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Group:
+        if "conditions" in data:
+            children = data["conditions"]
+        elif "rules" in data:
+            children = data["rules"]
+        else:
+            raise ValueError("group node is missing a 'conditions' key")
         return cls(
             combinator=data["combinator"],
-            conditions=tuple(_node_from_dict(c) for c in data.get("conditions", data.get("rules", []))),
+            conditions=tuple(_node_from_dict(c) for c in children),
         )
 
 
