@@ -2,7 +2,7 @@ from hyperrules import validate
 
 
 def test_valid_tree_has_no_errors():
-    tree = {"combinator": "and", "rules": [
+    tree = {"combinator": "and", "conditions": [
         {"field": "document_tag", "operator": "in", "value": ["drug_leaflet"]},
     ]}
     assert validate(tree) == []
@@ -18,16 +18,16 @@ def test_leaf_missing_field_is_reported():
 
 
 def test_group_with_unknown_combinator_is_reported():
-    assert any("combinator" in e for e in validate({"combinator": "xor", "rules": []}))
+    assert any("combinator" in e for e in validate({"combinator": "xor", "conditions": []}))
 
 
-def test_group_missing_rules_list_is_reported():
-    assert any("rules" in e for e in validate({"combinator": "and"}))
+def test_group_missing_conditions_list_is_reported():
+    assert any("conditions" in e for e in validate({"combinator": "and"}))
 
 
 def test_errors_surface_from_nested_children_with_path():
-    tree = {"combinator": "and", "rules": [
+    tree = {"combinator": "and", "conditions": [
         {"field": "ok", "operator": "=", "value": 1},
-        {"combinator": "or", "rules": [{"field": "n", "operator": "wat", "value": 2}]},
+        {"combinator": "or", "conditions": [{"field": "n", "operator": "wat", "value": 2}]},
     ]}
-    assert any("rules[1].rules[0]" in e for e in validate(tree))
+    assert any("conditions[1].conditions[0]" in e for e in validate(tree))

@@ -1,6 +1,6 @@
 import pytest
 
-from hyperrules import evaluate
+from hyperrules import matches as evaluate
 
 
 def test_leaf_equality_matches_context():
@@ -30,7 +30,7 @@ def test_leaf_is_boolean_coerces_truthiness():
 
 
 def test_and_group_requires_all_children():
-    tree = {"combinator": "and", "rules": [
+    tree = {"combinator": "and", "conditions": [
         {"field": "document_tag", "operator": "in", "value": ["drug_leaflet"]},
         {"field": "document_station", "operator": "=", "value": "NICU"},
     ]}
@@ -39,7 +39,7 @@ def test_and_group_requires_all_children():
 
 
 def test_or_group_requires_any_child():
-    tree = {"combinator": "or", "rules": [
+    tree = {"combinator": "or", "conditions": [
         {"field": "document_station", "operator": "=", "value": "NICU"},
         {"field": "vision_page_presence", "operator": "is", "value": True},
     ]}
@@ -48,7 +48,7 @@ def test_or_group_requires_any_child():
 
 
 def test_not_group_negates_children():
-    tree = {"combinator": "not", "rules": [
+    tree = {"combinator": "not", "conditions": [
         {"field": "document_station", "operator": "=", "value": "NICU"},
     ]}
     assert evaluate(tree, {"document_station": "ER"}) is True
@@ -57,9 +57,9 @@ def test_not_group_negates_children():
 
 def test_nested_groups_compose_the_real_drug_leaflet_shape():
     # tag in [drug_leaflet, formulary] AND (station = NICU OR has-diagram)
-    tree = {"combinator": "and", "rules": [
+    tree = {"combinator": "and", "conditions": [
         {"field": "document_tag", "operator": "in", "value": ["drug_leaflet", "formulary"]},
-        {"combinator": "or", "rules": [
+        {"combinator": "or", "conditions": [
             {"field": "document_station", "operator": "=", "value": "NICU"},
             {"field": "vision_page_presence", "operator": "is", "value": True},
         ]},
@@ -75,7 +75,7 @@ def test_nested_groups_compose_the_real_drug_leaflet_shape():
 
 
 def test_empty_group_is_true():
-    assert evaluate({"combinator": "and", "rules": []}, {}) is True
+    assert evaluate({"combinator": "and", "conditions": []}, {}) is True
 
 
 def test_comparison_operators_and_none_safety():
@@ -84,6 +84,19 @@ def test_comparison_operators_and_none_safety():
     assert evaluate({"field": "n", "operator": ">", "value": 10}, {"n": 11}) is True
     assert evaluate({"field": "n", "operator": "<", "value": 10}, {"n": 9}) is True
     assert evaluate({"field": "n", "operator": ">", "value": 10}, {}) is False  # missing → False, not a crash
+
+
+def test_not_in_operator():
+    assert evaluate({"field": "t", "operator": "not_in", "value": ["a", "b"]}, {"t": "c"}) is True
+    assert evaluate({"field": "t", "operator": "not_in", "value": ["a", "b"]}, {"t": "a"}) is False
+    assert evaluate({"field": "t", "operator": "not_in", "value": ["a"]}, {"t": ["b", "c"]}) is True
+    assert evaluate({"field": "t", "operator": "not_in", "value": ["a"]}, {"t": ["a", "c"]}) is False
+    assert evaluate({"field": "t", "operator": "not_in", "value": ["a"]}, {}) is False
+
+
+def test_group_missing_conditions_key_raises():
+    with pytest.raises(ValueError, match="missing"):
+        evaluate({"combinator": "and"}, {})
 
 
 def test_unknown_operator_raises_value_error():

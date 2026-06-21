@@ -6,21 +6,21 @@ A **rule** is a plain dict with a `when` key holding a nestable boolean conditio
 tree, plus opaque payload keys (`text`, `then`/`else`, …) the engine never reads:
 
 - **leaf** — `{"field": "...", "operator": "...", "value": ...}`
-- **group** — `{"combinator": "and" | "or" | "not", "rules": [ ...nodes... ]}`
+- **group** — `{"combinator": "and" | "or" | "not", "conditions": [ ...nodes... ]}`
 
 ```python
-from hyperrules import evaluate, load_dir, validate, RuleSet
+from hyperrules import matches, load_dir, validate, RuleSet
 
-tree = {"combinator": "and", "rules": [
+tree = {"combinator": "and", "conditions": [
     {"field": "document_tag", "operator": "in", "value": ["drug_leaflet", "formulary"]},
 ]}
-evaluate(tree, {"document_tag": ["drug_leaflet"]})   # -> True
+matches(tree, {"document_tag": ["drug_leaflet"]})   # -> True
 
 rules = RuleSet.load_dir("path/to/rules")            # reads *.json
 text = rules.concat({"document_tag": ["drug_leaflet"]}, key="text")
 ```
 
-Operators: `=`, `!=`, `in`, `is`, `>`, `<`. Combinators: `and`, `or`, `not`.
+Operators: `=`, `!=`, `in`, `not_in`, `is`, `>`, `<`, `contains`. Combinators: `and`, `or`, `not`.
 The engine depends on nothing; validation (`validate`) is a separate save-time
 concern, never on the evaluation hot path.
 

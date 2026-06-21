@@ -9,7 +9,7 @@ def _write(path: Path, obj: dict) -> None:
 
 
 def _leaf(field: str, operator: str, value) -> dict:
-    return {"combinator": "and", "rules": [{"field": field, "operator": operator, "value": value}]}
+    return {"combinator": "and", "conditions": [{"field": field, "operator": operator, "value": value}]}
 
 
 def test_ruleset_matching_returns_only_matched_rule_dicts(tmp_path: Path) -> None:

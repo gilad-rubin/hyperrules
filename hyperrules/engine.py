@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+_MISSING = object()
+
 
 def _op_eq(actual: Any, value: Any) -> bool:
     return actual == value
@@ -13,8 +15,6 @@ def _op_ne(actual: Any, value: Any) -> bool:
 
 
 def _op_in(actual: Any, value: Any) -> bool:
-    # ``value`` is the allowed set. When the context field is itself a collection
-    # (e.g. document_tag: list[str]), "in" means the sets intersect.
     allowed = value if isinstance(value, (list, tuple, set)) else [value]
     if isinstance(actual, (list, tuple, set)):
         return bool(set(actual) & set(allowed))
@@ -26,36 +26,87 @@ def _op_is(actual: Any, value: Any) -> bool:
 
 
 def _op_gt(actual: Any, value: Any) -> bool:
-    return actual is not None and actual > value
+    return actual > value
 
 
 def _op_lt(actual: Any, value: Any) -> bool:
-    return actual is not None and actual < value
+    return actual < value
+
+
+def _op_not_in(actual: Any, value: Any) -> bool:
+    return not _op_in(actual, value)
+
+
+def _op_contains(actual: Any, value: Any) -> bool:
+    return value in actual
 
 
 OPERATORS = {
     "=": _op_eq,
     "!=": _op_ne,
     "in": _op_in,
+    "not_in": _op_not_in,
     "is": _op_is,
     ">": _op_gt,
     "<": _op_lt,
+    "contains": _op_contains,
 }
 
 
-def evaluate(tree: Mapping[str, Any], context: Mapping[str, Any]) -> bool:
-    """True if ``context`` satisfies the condition ``tree`` (a parsed JSON node)."""
-    if "combinator" in tree:  # group node
-        children = tree.get("rules", [])
-        combinator = tree["combinator"]
-        if combinator == "and":
-            return all(evaluate(child, context) for child in children)
-        if combinator == "or":
-            return any(evaluate(child, context) for child in children)
-        if combinator == "not":  # negate the AND of children
-            return not all(evaluate(child, context) for child in children)
-        raise ValueError(f"unknown combinator: {combinator!r}")
-    op = OPERATORS.get(tree["operator"])  # leaf node
+def _get_children(tree: Mapping[str, Any]) -> list:
+    if "conditions" not in tree:
+        raise ValueError("group node is missing a 'conditions' key")
+    children = tree["conditions"]
+    if not isinstance(children, list):
+        raise TypeError(f"group children must be a list, got {type(children).__name__}")
+    return children
+
+
+def _eval_leaf(field: str, operator: str, value: Any, context: Mapping[str, Any]) -> bool:
+    actual = context.get(field, _MISSING)
+    if actual is _MISSING or actual is None:
+        return False
+    op = OPERATORS.get(operator)
     if op is None:
-        raise ValueError(f"unknown operator: {tree['operator']!r}")
-    return op(context.get(tree["field"]), tree["value"])
+        raise ValueError(f"unknown operator: {operator!r}")
+    return op(actual, value)
+
+
+def _eval_group(combinator: str, children: Any, context: Mapping[str, Any]) -> bool:
+    if combinator == "and":
+        return all(matches(child, context) for child in children)
+    if combinator == "or":
+        return any(matches(child, context) for child in children)
+    if combinator == "not":
+        if len(children) != 1:
+            raise ValueError(f"NOT group must have exactly one child, got {len(children)}")
+        return not matches(children[0], context)
+    raise ValueError(f"unknown combinator: {combinator!r}")
+
+
+def matches(tree: Mapping[str, Any] | Any, context: Mapping[str, Any]) -> bool:
+    """True if ``context`` satisfies the condition ``tree``.
+
+    Accepts raw dicts, or any object with leaf attributes (``.field``,
+    ``.operator``, ``.value``) or group attributes (``.combinator``,
+    ``.conditions``). This duck-typing contract means hyperrules does not
+    need to import the typed classes from hypster or anywhere else.
+    """
+    if hasattr(tree, "field") and hasattr(tree, "operator") and hasattr(tree, "value"):
+        return _eval_leaf(tree.field, tree.operator, tree.value, context)
+
+    if hasattr(tree, "combinator") and hasattr(tree, "conditions"):
+        return _eval_group(tree.combinator, list(tree.conditions), context)
+
+    if isinstance(tree, Mapping):
+        if "combinator" in tree:
+            children = _get_children(tree)
+            return _eval_group(tree["combinator"], children, context)
+        if "field" not in tree:
+            raise TypeError(f"dict condition must have 'combinator' or 'field' key, got keys: {set(tree)}")
+        for required in ("operator", "value"):
+            if required not in tree:
+                raise TypeError(f"leaf condition dict is missing required key {required!r}")
+        return _eval_leaf(tree["field"], tree["operator"], tree["value"], context)
+
+    raise TypeError(f"expected a condition (Leaf, Group, or dict), got {type(tree).__name__}")
