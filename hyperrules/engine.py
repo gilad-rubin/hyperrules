@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from collections.abc import Mapping
 from typing import Any
 
@@ -55,21 +54,9 @@ OPERATORS = {
 
 
 def _get_children(tree: Mapping[str, Any]) -> list:
-    has_conditions = "conditions" in tree
-    has_rules = "rules" in tree
-    if has_conditions and has_rules:
-        raise ValueError("group node has both 'conditions' and 'rules' keys — ambiguous")
-    if has_conditions:
-        children = tree["conditions"]
-    elif has_rules:
-        warnings.warn(
-            "The 'rules' key for group children is deprecated — use 'conditions' instead.",
-            DeprecationWarning,
-            stacklevel=3,
-        )
-        children = tree["rules"]
-    else:
+    if "conditions" not in tree:
         raise ValueError("group node is missing a 'conditions' key")
+    children = tree["conditions"]
     if not isinstance(children, list):
         raise TypeError(f"group children must be a list, got {type(children).__name__}")
     return children
@@ -123,13 +110,3 @@ def matches(tree: Mapping[str, Any] | Any, context: Mapping[str, Any]) -> bool:
         return _eval_leaf(tree["field"], tree["operator"], tree["value"], context)
 
     raise TypeError(f"expected a condition (Leaf, Group, or dict), got {type(tree).__name__}")
-
-
-def evaluate(tree: Mapping[str, Any] | Any, context: Mapping[str, Any]) -> bool:
-    """Deprecated alias for :func:`matches`."""
-    warnings.warn(
-        "evaluate() is deprecated, use matches() instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return matches(tree, context)

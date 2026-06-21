@@ -1,12 +1,11 @@
 """Tests for matches() with structured Leaf/Group types and the 'conditions' key."""
 
-import warnings
 from dataclasses import dataclass
 from typing import Any
 
 import pytest
 
-from hyperrules import And, Group, Leaf, Not, Or, evaluate, field, matches
+from hyperrules import And, Group, Leaf, Not, Or, field, matches
 
 
 def test_matches_leaf():
@@ -50,20 +49,9 @@ def test_matches_dict_with_conditions_key():
     assert matches(tree, {"a": 1}) is True
 
 
-def test_matches_dict_with_rules_key_emits_deprecation():
-    tree = {"combinator": "and", "rules": [
-        {"field": "a", "operator": "=", "value": 1},
-    ]}
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        assert matches(tree, {"a": 1}) is True
-        assert any("rules" in str(warning.message) for warning in w)
-
-
-def test_matches_dict_with_both_keys_raises():
-    tree = {"combinator": "and", "conditions": [], "rules": []}
-    with pytest.raises(ValueError, match="ambiguous"):
-        matches(tree, {})
+def test_matches_dict_missing_conditions_key_raises():
+    with pytest.raises(ValueError, match="missing"):
+        matches({"combinator": "and"}, {})
 
 
 def test_matches_dict_missing_field_key_raises():
@@ -149,10 +137,3 @@ def test_matches_rejects_unknown_type():
         matches("not a condition", {})
 
 
-def test_evaluate_is_deprecated_alias():
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        result = evaluate(Leaf("x", "=", 1), {"x": 1})
-        assert result is True
-        assert any(issubclass(warning.category, DeprecationWarning) for warning in w)
-        assert any("matches" in str(warning.message) for warning in w)

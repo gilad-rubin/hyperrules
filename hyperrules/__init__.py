@@ -7,7 +7,7 @@ properties and build conditions with ``.eq()``, ``.is_in()``, ``&``, ``|``,
 """
 
 from hyperrules.codecs import load_rule, save_rule
-from hyperrules.engine import evaluate, matches
+from hyperrules.engine import matches
 from hyperrules.field_spec import DEFAULT_OPERATORS, FieldSpec
 from hyperrules.ruleset import RuleSet, load_dir
 from hyperrules.schema import Field, Schema
@@ -17,7 +17,6 @@ from hyperrules import field
 
 __all__ = [
     "matches",
-    "evaluate",
     "validate",
     "Leaf",
     "Group",
@@ -30,7 +29,6 @@ __all__ = [
     "load_rule",
     "save_rule",
     "DEFAULT_OPERATORS",
-    # kept for backward compat
     "RuleSet",
     "load_dir",
     "Field",

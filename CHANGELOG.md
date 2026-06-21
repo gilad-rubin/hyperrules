@@ -13,9 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Duck-typed condition dispatch: `matches()` accepts any object with leaf attributes (`.field`, `.operator`, `.value`) or group attributes (`.combinator`, `.conditions`), not just hyperrules' own Leaf/Group classes. This removes the need to import types from hyperrules.
 - Guard-first evaluation: missing or None context values return `False` for ALL operators (including `!=` and `is`), before operator dispatch. Previously `!=` on a missing field returned `True` and `is False` on a missing field returned `True`.
 
-### Deprecated
+### Removed
 
-- `evaluate()` — use `matches()` instead. `evaluate()` now emits a DeprecationWarning.
+- `evaluate()` — replaced by `matches()`.
+- Legacy `rules` key for group children — use `conditions` instead.
 
 ## [0.2.0] - 2026-06-21
 

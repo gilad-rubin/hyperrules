@@ -117,13 +117,6 @@ def test_combined_builder_expression():
     assert len(rule.when.conditions) == 2
 
 
-def test_group_from_dict_reads_legacy_rules_key():
-    data = {"combinator": "and", "rules": [{"field": "x", "operator": "=", "value": 1}]}
-    group = Group.from_dict(data)
-    assert len(group.conditions) == 1
-    assert group.conditions[0] == Leaf("x", "=", 1)
-
-
 def test_group_from_dict_missing_conditions_raises():
     with pytest.raises(ValueError, match="missing"):
         Group.from_dict({"combinator": "and"})

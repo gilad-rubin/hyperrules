@@ -57,26 +57,11 @@ class Group:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Group:
-        import warnings
-
-        has_conditions = "conditions" in data
-        has_rules = "rules" in data
-        if has_conditions and has_rules:
-            raise ValueError("group node has both 'conditions' and 'rules' keys — ambiguous")
-        if has_conditions:
-            children = data["conditions"]
-        elif has_rules:
-            warnings.warn(
-                "The 'rules' key for group children is deprecated — use 'conditions' instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            children = data["rules"]
-        else:
+        if "conditions" not in data:
             raise ValueError("group node is missing a 'conditions' key")
         return cls(
             combinator=data["combinator"],
-            conditions=tuple(_node_from_dict(c) for c in children),
+            conditions=tuple(_node_from_dict(c) for c in data["conditions"]),
         )
 
 
