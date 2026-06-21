@@ -56,7 +56,9 @@ def load_rule(path: str | Path) -> Rule:
 
     _, front, body = text.split("---", 2)
     meta = yaml.safe_load(front)
-    when_data = meta.get("when") or {}
+    when_data = meta.get("when")
+    if when_data is None:
+        when_data = {}
     condition = _condition_from_dict(when_data)
     return Rule(
         when=condition,

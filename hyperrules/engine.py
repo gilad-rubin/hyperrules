@@ -105,16 +105,18 @@ def matches(tree: Mapping[str, Any] | Any, context: Mapping[str, Any]) -> bool:
     ``.conditions``). This duck-typing contract means hyperrules does not
     need to import the typed classes from hypster or anywhere else.
     """
-    if hasattr(tree, "field") and hasattr(tree, "operator"):
+    if hasattr(tree, "field") and hasattr(tree, "operator") and hasattr(tree, "value"):
         return _eval_leaf(tree.field, tree.operator, tree.value, context)
 
     if hasattr(tree, "combinator") and hasattr(tree, "conditions"):
-        return _eval_group(tree.combinator, tree.conditions, context)
+        return _eval_group(tree.combinator, list(tree.conditions), context)
 
     if isinstance(tree, Mapping):
         if "combinator" in tree:
             children = _get_children(tree)
             return _eval_group(tree["combinator"], children, context)
+        if "field" not in tree:
+            raise TypeError(f"dict condition must have 'combinator' or 'field' key, got keys: {set(tree)}")
         return _eval_leaf(tree["field"], tree["operator"], tree["value"], context)
 
     raise TypeError(f"expected a condition (Leaf, Group, or dict), got {type(tree).__name__}")
