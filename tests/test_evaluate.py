@@ -30,7 +30,7 @@ def test_leaf_is_boolean_coerces_truthiness():
 
 
 def test_and_group_requires_all_children():
-    tree = {"combinator": "and", "rules": [
+    tree = {"combinator": "and", "conditions": [
         {"field": "document_tag", "operator": "in", "value": ["drug_leaflet"]},
         {"field": "document_station", "operator": "=", "value": "NICU"},
     ]}
@@ -39,7 +39,7 @@ def test_and_group_requires_all_children():
 
 
 def test_or_group_requires_any_child():
-    tree = {"combinator": "or", "rules": [
+    tree = {"combinator": "or", "conditions": [
         {"field": "document_station", "operator": "=", "value": "NICU"},
         {"field": "vision_page_presence", "operator": "is", "value": True},
     ]}
@@ -48,7 +48,7 @@ def test_or_group_requires_any_child():
 
 
 def test_not_group_negates_children():
-    tree = {"combinator": "not", "rules": [
+    tree = {"combinator": "not", "conditions": [
         {"field": "document_station", "operator": "=", "value": "NICU"},
     ]}
     assert evaluate(tree, {"document_station": "ER"}) is True
@@ -57,9 +57,9 @@ def test_not_group_negates_children():
 
 def test_nested_groups_compose_the_real_drug_leaflet_shape():
     # tag in [drug_leaflet, formulary] AND (station = NICU OR has-diagram)
-    tree = {"combinator": "and", "rules": [
+    tree = {"combinator": "and", "conditions": [
         {"field": "document_tag", "operator": "in", "value": ["drug_leaflet", "formulary"]},
-        {"combinator": "or", "rules": [
+        {"combinator": "or", "conditions": [
             {"field": "document_station", "operator": "=", "value": "NICU"},
             {"field": "vision_page_presence", "operator": "is", "value": True},
         ]},
@@ -75,7 +75,7 @@ def test_nested_groups_compose_the_real_drug_leaflet_shape():
 
 
 def test_empty_group_is_true():
-    assert evaluate({"combinator": "and", "rules": []}, {}) is True
+    assert evaluate({"combinator": "and", "conditions": []}, {}) is True
 
 
 def test_comparison_operators_and_none_safety():

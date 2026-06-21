@@ -117,6 +117,9 @@ def matches(tree: Mapping[str, Any] | Any, context: Mapping[str, Any]) -> bool:
             return _eval_group(tree["combinator"], children, context)
         if "field" not in tree:
             raise TypeError(f"dict condition must have 'combinator' or 'field' key, got keys: {set(tree)}")
+        for required in ("operator", "value"):
+            if required not in tree:
+                raise TypeError(f"leaf condition dict is missing required key {required!r}")
         return _eval_leaf(tree["field"], tree["operator"], tree["value"], context)
 
     raise TypeError(f"expected a condition (Leaf, Group, or dict), got {type(tree).__name__}")
