@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-06-21
+
+### Added
+
+- `matches(condition, context)` — renamed from `evaluate()` for readability (`if matches(rule.when, document)`)
+- Duck-typed condition dispatch: `matches()` accepts any object with leaf attributes (`.field`, `.operator`, `.value`) or group attributes (`.combinator`, `.conditions`), not just hyperrules' own Leaf/Group classes. This removes the need to import types from hyperrules.
+- Guard-first evaluation: missing or None context values return `False` for ALL operators (including `!=` and `is`), before operator dispatch. Previously `!=` on a missing field returned `True` and `is False` on a missing field returned `True`.
+
+### Deprecated
+
+- `evaluate()` — use `matches()` instead. `evaluate()` now emits a DeprecationWarning.
+
 ## [0.2.0] - 2026-06-21
 
 ### Added

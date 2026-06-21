@@ -4,6 +4,8 @@ import warnings
 from collections.abc import Mapping
 from typing import Any
 
+_MISSING = object()
+
 
 def _op_eq(actual: Any, value: Any) -> bool:
     return actual == value
@@ -14,8 +16,6 @@ def _op_ne(actual: Any, value: Any) -> bool:
 
 
 def _op_in(actual: Any, value: Any) -> bool:
-    # ``value`` is the allowed set. When the context field is itself a collection
-    # (e.g. document_tag: list[str]), "in" means the sets intersect.
     allowed = value if isinstance(value, (list, tuple, set)) else [value]
     if isinstance(actual, (list, tuple, set)):
         return bool(set(actual) & set(allowed))
@@ -27,22 +27,18 @@ def _op_is(actual: Any, value: Any) -> bool:
 
 
 def _op_gt(actual: Any, value: Any) -> bool:
-    return actual is not None and actual > value
+    return actual > value
 
 
 def _op_lt(actual: Any, value: Any) -> bool:
-    return actual is not None and actual < value
+    return actual < value
 
 
 def _op_not_in(actual: Any, value: Any) -> bool:
-    if actual is None:
-        return False
     return not _op_in(actual, value)
 
 
 def _op_contains(actual: Any, value: Any) -> bool:
-    if actual is None:
-        return False
     return value in actual
 
 
@@ -79,44 +75,56 @@ def _get_children(tree: Mapping[str, Any]) -> list:
     return children
 
 
-def evaluate(tree: Mapping[str, Any] | Any, context: Mapping[str, Any]) -> bool:
+def _eval_leaf(field: str, operator: str, value: Any, context: Mapping[str, Any]) -> bool:
+    actual = context.get(field, _MISSING)
+    if actual is _MISSING or actual is None:
+        return False
+    op = OPERATORS.get(operator)
+    if op is None:
+        raise ValueError(f"unknown operator: {operator!r}")
+    return op(actual, value)
+
+
+def _eval_group(combinator: str, children: Any, context: Mapping[str, Any]) -> bool:
+    if combinator == "and":
+        return all(matches(child, context) for child in children)
+    if combinator == "or":
+        return any(matches(child, context) for child in children)
+    if combinator == "not":
+        if len(children) != 1:
+            raise ValueError(f"NOT group must have exactly one child, got {len(children)}")
+        return not matches(children[0], context)
+    raise ValueError(f"unknown combinator: {combinator!r}")
+
+
+def matches(tree: Mapping[str, Any] | Any, context: Mapping[str, Any]) -> bool:
     """True if ``context`` satisfies the condition ``tree``.
 
-    Accepts raw dicts (parsed JSON) or structured ``Leaf``/``Group`` types.
+    Accepts raw dicts, or any object with leaf attributes (``.field``,
+    ``.operator``, ``.value``) or group attributes (``.combinator``,
+    ``.conditions``). This duck-typing contract means hyperrules does not
+    need to import the typed classes from hypster or anywhere else.
     """
-    from hyperrules.types import Group, Leaf
+    if hasattr(tree, "field") and hasattr(tree, "operator"):
+        return _eval_leaf(tree.field, tree.operator, tree.value, context)
 
-    if isinstance(tree, Leaf):
-        op = OPERATORS.get(tree.operator)
-        if op is None:
-            raise ValueError(f"unknown operator: {tree.operator!r}")
-        return op(context.get(tree.field), tree.value)
+    if hasattr(tree, "combinator") and hasattr(tree, "conditions"):
+        return _eval_group(tree.combinator, tree.conditions, context)
 
-    if isinstance(tree, Group):
-        if tree.combinator == "and":
-            return all(evaluate(child, context) for child in tree.conditions)
-        if tree.combinator == "or":
-            return any(evaluate(child, context) for child in tree.conditions)
-        if tree.combinator == "not":
-            if len(tree.conditions) != 1:
-                raise ValueError(f"NOT group must have exactly one child, got {len(tree.conditions)}")
-            return not evaluate(tree.conditions[0], context)
-        raise ValueError(f"unknown combinator: {tree.combinator!r}")
+    if isinstance(tree, Mapping):
+        if "combinator" in tree:
+            children = _get_children(tree)
+            return _eval_group(tree["combinator"], children, context)
+        return _eval_leaf(tree["field"], tree["operator"], tree["value"], context)
 
-    if "combinator" in tree:
-        children = _get_children(tree)
-        combinator = tree["combinator"]
-        if combinator == "and":
-            return all(evaluate(child, context) for child in children)
-        if combinator == "or":
-            return any(evaluate(child, context) for child in children)
-        if combinator == "not":
-            if len(children) != 1:
-                raise ValueError(f"NOT group must have exactly one child, got {len(children)}")
-            return not evaluate(children[0], context)
-        raise ValueError(f"unknown combinator: {combinator!r}")
+    raise TypeError(f"expected a condition (Leaf, Group, or dict), got {type(tree).__name__}")
 
-    op = OPERATORS.get(tree["operator"])
-    if op is None:
-        raise ValueError(f"unknown operator: {tree['operator']!r}")
-    return op(context.get(tree["field"]), tree["value"])
+
+def evaluate(tree: Mapping[str, Any] | Any, context: Mapping[str, Any]) -> bool:
+    """Deprecated alias for :func:`matches`."""
+    warnings.warn(
+        "evaluate() is deprecated, use matches() instead",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return matches(tree, context)

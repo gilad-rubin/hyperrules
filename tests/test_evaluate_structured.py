@@ -1,10 +1,12 @@
-"""Tests for evaluate() with structured Leaf/Group types and the 'conditions' key."""
+"""Tests for matches() with structured Leaf/Group types and the 'conditions' key."""
 
 import warnings
+from dataclasses import dataclass
+from typing import Any
 
 import pytest
 
-from hyperrules import And, Group, Leaf, Not, Or, evaluate, field
+from hyperrules import And, Group, Leaf, Not, Or, evaluate, field, matches
 
 
 def test_evaluate_leaf():
@@ -82,9 +84,75 @@ def test_builder_to_evaluate_roundtrip():
     assert evaluate(condition, {"document_tag": ["drug"], "document_station": "ER"}) is False
 
 
-def test_missing_field_is_falsy():
+def test_guard_first_missing_field_returns_false_for_all_operators():
+    """Guard-first: missing/absent field → False for ALL operators, including != and is."""
+    assert evaluate(Leaf("x", "=", 5), {}) is False
+    assert evaluate(Leaf("x", "!=", 5), {}) is False
     assert evaluate(Leaf("x", "is", True), {}) is False
-    assert evaluate(Leaf("x", "is", False), {}) is True
+    assert evaluate(Leaf("x", "is", False), {}) is False
     assert evaluate(Leaf("x", ">", 5), {}) is False
     assert evaluate(Leaf("x", "<", 5), {}) is False
-    assert evaluate(Leaf("x", "=", 5), {}) is False
+    assert evaluate(Leaf("x", "in", [1, 2]), {}) is False
+    assert evaluate(Leaf("x", "not_in", [1, 2]), {}) is False
+    assert evaluate(Leaf("x", "contains", "a"), {}) is False
+
+
+def test_guard_first_none_field_returns_false_for_all_operators():
+    """Guard-first: None value → False for ALL operators."""
+    ctx = {"x": None}
+    assert evaluate(Leaf("x", "=", 5), ctx) is False
+    assert evaluate(Leaf("x", "!=", 5), ctx) is False
+    assert evaluate(Leaf("x", "is", True), ctx) is False
+    assert evaluate(Leaf("x", "is", False), ctx) is False
+    assert evaluate(Leaf("x", ">", 5), ctx) is False
+    assert evaluate(Leaf("x", "<", 5), ctx) is False
+    assert evaluate(Leaf("x", "in", [1, 2]), ctx) is False
+    assert evaluate(Leaf("x", "not_in", [1, 2]), ctx) is False
+    assert evaluate(Leaf("x", "contains", "a"), ctx) is False
+
+
+def test_matches_duck_typed_leaf():
+    """matches() accepts any object with field/operator/value attributes."""
+
+    @dataclass
+    class CustomLeaf:
+        field: str
+        operator: str
+        value: Any
+
+    leaf = CustomLeaf("station", "=", "NICU")
+    assert matches(leaf, {"station": "NICU"}) is True
+    assert matches(leaf, {"station": "ER"}) is False
+
+
+def test_matches_duck_typed_group():
+    """matches() accepts any object with combinator/conditions attributes."""
+
+    @dataclass
+    class CustomLeaf:
+        field: str
+        operator: str
+        value: Any
+
+    @dataclass
+    class CustomGroup:
+        combinator: str
+        conditions: tuple
+
+    group = CustomGroup("and", (CustomLeaf("a", "=", 1), CustomLeaf("b", "=", 2)))
+    assert matches(group, {"a": 1, "b": 2}) is True
+    assert matches(group, {"a": 1, "b": 9}) is False
+
+
+def test_matches_rejects_unknown_type():
+    with pytest.raises(TypeError, match="expected a condition"):
+        matches("not a condition", {})
+
+
+def test_evaluate_is_deprecated_alias():
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = evaluate(Leaf("x", "=", 1), {"x": 1})
+        assert result is True
+        assert any(issubclass(warning.category, DeprecationWarning) for warning in w)
+        assert any("matches" in str(warning.message) for warning in w)

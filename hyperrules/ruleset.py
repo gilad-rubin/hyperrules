@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from hyperrules.engine import evaluate
+from hyperrules.engine import matches
 
 
 def load_dir(path: str | Path, *, when_key: str = "when") -> list[dict]:
@@ -35,7 +35,7 @@ class RuleSet:
         return [
             rule
             for rule in self.rules
-            if self.when_key not in rule or evaluate(rule[self.when_key], context)
+            if self.when_key not in rule or matches(rule[self.when_key], context)
         ]
 
     def concat(self, context: Mapping[str, Any], *, key: str, sep: str = "\n\n") -> str:

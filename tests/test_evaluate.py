@@ -1,6 +1,6 @@
 import pytest
 
-from hyperrules import evaluate
+from hyperrules import matches as evaluate
 
 
 def test_leaf_equality_matches_context():
