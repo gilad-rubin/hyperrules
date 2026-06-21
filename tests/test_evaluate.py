@@ -86,6 +86,19 @@ def test_comparison_operators_and_none_safety():
     assert evaluate({"field": "n", "operator": ">", "value": 10}, {}) is False  # missing → False, not a crash
 
 
+def test_not_in_operator():
+    assert evaluate({"field": "t", "operator": "not_in", "value": ["a", "b"]}, {"t": "c"}) is True
+    assert evaluate({"field": "t", "operator": "not_in", "value": ["a", "b"]}, {"t": "a"}) is False
+    assert evaluate({"field": "t", "operator": "not_in", "value": ["a"]}, {"t": ["b", "c"]}) is True
+    assert evaluate({"field": "t", "operator": "not_in", "value": ["a"]}, {"t": ["a", "c"]}) is False
+    assert evaluate({"field": "t", "operator": "not_in", "value": ["a"]}, {}) is False
+
+
+def test_group_missing_conditions_key_raises():
+    with pytest.raises(ValueError, match="missing"):
+        evaluate({"combinator": "and"}, {})
+
+
 def test_unknown_operator_raises_value_error():
     with pytest.raises(ValueError):
         evaluate({"field": "x", "operator": "wat", "value": 1}, {"x": 1})

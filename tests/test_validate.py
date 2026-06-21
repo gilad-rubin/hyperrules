@@ -21,8 +21,8 @@ def test_group_with_unknown_combinator_is_reported():
     assert any("combinator" in e for e in validate({"combinator": "xor", "rules": []}))
 
 
-def test_group_missing_rules_list_is_reported():
-    assert any("rules" in e for e in validate({"combinator": "and"}))
+def test_group_missing_conditions_list_is_reported():
+    assert any("conditions" in e for e in validate({"combinator": "and"}))
 
 
 def test_errors_surface_from_nested_children_with_path():
