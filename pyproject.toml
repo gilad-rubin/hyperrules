@@ -1,6 +1,6 @@
 [project]
 name = "hyperrules"
-version = "0.1.0"
+version = "0.4.0"
 description = "Tiny zero-dependency predicate->payload rule engine (nestable AND/OR/NOT condition trees)."
 readme = "README.md"
 requires-python = ">=3.11"

@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-11-09
+
+### Added
+
+- References: a leaf's value may name another field of the context, `{"ref": "user.district"}` (`ref()`, `ref_path()`), so a rule can compare a document with the requesting user's own values. A field spec given as a value is a reference to it (`district.eq(user_district)`).
+- A reference may stand inside a list of values (`district.is_in(["National", user_district])`). Inside an `in` list a missing reference is one value fewer; a reference to a list adds each of its values; inside a `not_in` list a missing reference makes the leaf false.
+- Field names and references are paths: `user.district` reads the context's `"user.district"` key, else `context["user"]["district"]`. `lookup(context, path)` and its `MISSING` marker are exported.
+- Typed save-time checks: `validate(tree, fields=...)` and `validate_rules(rules, fields=...)` take the declared fields (field specs or their dicts) and name, by place, an unknown field or reference, an operator the field's type does not offer, a value or reference of the wrong type, and a value outside a select's options. They accept hypster's leaves and groups too.
+
+### Changed
+
+- The `{field: [values]}` shorthand is never used for a condition holding a reference, so a saved rule keeps it whole; a one-field shorthand loads as an `and` group.
+
+These were first built in Panda's vendored copy (its 0.2.0) and come home here.
+
 ## [0.3.0] - 2026-06-21
 
 ### Added

@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from hyperrules.refs import has_ref
 from hyperrules.types import And, Group, Leaf, Rule, _node_from_dict
 
 
@@ -21,6 +22,10 @@ def rule_from_dict(data: dict[str, Any]) -> Rule:
 
 
 def condition_to_simple_dict(condition: Leaf | Group) -> dict[str, Any] | None:
+    """The ``{field: [values]}`` shorthand of an all-``in`` condition, or None when it has none (a reference has none)."""
+    leaves = [condition] if isinstance(condition, Leaf) else list(getattr(condition, "conditions", ()))
+    if any(isinstance(leaf, Leaf) and has_ref(leaf.value) for leaf in leaves):
+        return None
     if isinstance(condition, Leaf) and condition.operator == "in":
         return {condition.field: condition.value}
     if isinstance(condition, Group) and condition.combinator == "and":
@@ -34,7 +39,7 @@ def condition_to_simple_dict(condition: Leaf | Group) -> dict[str, Any] | None:
 
 def condition_from_simple_dict(data: dict[str, Any]) -> Group:
     leaves = [Leaf(field=k, operator="in", value=v if isinstance(v, list) else [v]) for k, v in data.items()]
-    return And(*leaves)
+    return And(*leaves) if len(leaves) != 1 else Group(combinator="and", conditions=tuple(leaves))
 
 
 def _condition_from_dict(data: dict[str, Any]) -> Leaf | Group:
